@@ -1,0 +1,44 @@
+databases:
+  - name: nogagames-db
+    plan: free
+    databaseName: nogagames
+    user: nogagames
+
+services:
+  - type: web
+    name: nogagames-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: RAWG_KEY
+        sync: false
+      - key: FRONTEND_ORIGIN
+        fromService:
+          name: nogagames-web
+          type: web
+          property: url
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nogagames-db
+          property: connectionString
+
+  - type: web
+    name: nogagames-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: nogagames-api
+          type: web
+          property: url
