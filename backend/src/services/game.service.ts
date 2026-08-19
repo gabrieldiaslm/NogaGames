@@ -1,7 +1,17 @@
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../types/errors.js";
 import { GAME_STATUSES, type GameStatus } from "../types/index.js";
-import { getGameDetailsRawg } from "./rawg.service.js";
+import { getGameDetailsRawg, MOCK_CATALOG } from "./rawg.service.js";
+
+function resolveHours(game: { externalId: number | null; hoursToBeat: number | null }): number | null {
+  if (game.hoursToBeat !== null && game.hoursToBeat !== undefined) {
+    return game.hoursToBeat;
+  }
+  if (game.externalId !== null) {
+    return MOCK_CATALOG.find((catalogGame) => catalogGame.id === game.externalId)?.hoursToBeat ?? null;
+  }
+  return null;
+}
 
 const ALLOWED_TRANSITIONS: Record<GameStatus, GameStatus[]> = {
   BACKLOG: ["PLAYING"],
@@ -75,6 +85,7 @@ export async function getDashboardWinner(): Promise<{
     orderBy: [{ votes: { _count: "desc" } }, { createdAt: "desc" }],
     select: {
       id: true,
+      externalId: true,
       title: true,
       coverImage: true,
       hoursToBeat: true,
@@ -90,7 +101,7 @@ export async function getDashboardWinner(): Promise<{
     id: winner.id,
     title: winner.title,
     coverImage: winner.coverImage,
-    hoursToBeat: winner.hoursToBeat,
+    hoursToBeat: resolveHours(winner),
     votesCount: winner._count.votes,
   };
 }
@@ -111,7 +122,7 @@ export async function getBacklogGames(userId: string): Promise<
     id: game.id,
     title: game.title,
     coverImage: game.coverImage,
-    hoursToBeat: game.hoursToBeat,
+    hoursToBeat: resolveHours(game),
     votesCount: game._count.votes,
     userVoted: game.votes.length > 0,
   }));
@@ -123,14 +134,14 @@ export async function getCompletedGames(): Promise<
   const games = await prisma.game.findMany({
     where: { status: "COMPLETED" },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
+    select: { id: true, externalId: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
   });
 
   return games.map((game) => ({
     id: game.id,
     title: game.title,
     coverImage: game.coverImage,
-    hoursToBeat: game.hoursToBeat,
+    hoursToBeat: resolveHours(game),
     updatedAt: game.updatedAt.toISOString(),
   }));
 }
@@ -141,14 +152,14 @@ export async function getPlayingGames(): Promise<
   const games = await prisma.game.findMany({
     where: { status: "PLAYING" },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
+    select: { id: true, externalId: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
   });
 
   return games.map((game) => ({
     id: game.id,
     title: game.title,
     coverImage: game.coverImage,
-    hoursToBeat: game.hoursToBeat,
+    hoursToBeat: resolveHours(game),
     updatedAt: game.updatedAt.toISOString(),
   }));
 }

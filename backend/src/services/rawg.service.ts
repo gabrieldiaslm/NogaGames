@@ -114,7 +114,11 @@ export const MOCK_CATALOG: RawgGame[] = [
   mockEntry(200055, "Mullet MadJack", "2024", "https://media.rawg.io/media/resize/1280/-/games/abb/abb7001813e2976becc44289d61d59c3.jpg", 3),
 ];
 
-function mockSearch(q: string): GameSearchResult[] {
+function mockHours(externalId: number): number | null {
+  return MOCK_CATALOG.find((game) => game.id === externalId)?.hoursToBeat ?? null;
+}
+
+export function mockSearch(q: string): GameSearchResult[] {
   const term = q.toLowerCase();
   return MOCK_CATALOG.filter((g) => g.name.toLowerCase().includes(term)).map(toSearchResult);
 }
@@ -138,7 +142,7 @@ export async function searchGamesRawg(q: string): Promise<GameSearchResult[]> {
     });
     return data.results
       .filter((g) => g.name)
-      .map((g) => toSearchResult({ ...g, hoursToBeat: null }));
+      .map((g) => toSearchResult({ ...g, hoursToBeat: mockHours(g.id) }));
   } catch {
     throw new RawgUnavailableError();
   }
@@ -160,7 +164,7 @@ export async function getGameDetailsRawg(externalId: number): Promise<GameSearch
       params: { key },
       timeout: RAWG_TIMEOUT_MS,
     });
-    return toSearchResult({ ...data, hoursToBeat: null });
+    return toSearchResult({ ...data, hoursToBeat: mockHours(data.id) });
   } catch {
     throw new RawgUnavailableError();
   }
