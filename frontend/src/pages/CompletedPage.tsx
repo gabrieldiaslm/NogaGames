@@ -52,7 +52,7 @@ export function CompletedPage() {
   return (
     <main className="page">
       <h1>Zerados</h1>
-      <p className="page-subtitle">Jogos concluídos. Só vitória.</p>
+      <p className="page-subtitle">Seus jogos concluídos. Só vitória.</p>
 
       {message && <div className={`banner ${message.type}`}>{message.text}</div>}
 
@@ -61,7 +61,7 @@ export function CompletedPage() {
       ) : games.length === 0 ? (
         <div className="empty-state">
           <p>Nenhum jogo zerado ainda.</p>
-          <p className="muted">Os jogos concluídos aparecem aqui para o troféu da galera.</p>
+          <p className="muted">Os jogos que você concluir aparecem aqui.</p>
         </div>
       ) : (
         <ul className="game-list">

@@ -1,0 +1,133 @@
+
+> nogagames-backend@1.0.0 dev
+> tsx watch src/index.ts
+
+NogaGames API rodando em http://localhost:3333
+[NogaGames] Erro não tratado: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:34
+
+  51   username: string,
+  52   password: string,
+  53 ): Promise<{ token: string }> {
+→ 54   const user = await prisma.user.findUnique({
+         where: {
+           username: undefined,
+       ?   id?: String,
+       ?   email?: String,
+       ?   AND?: UserWhereInput | UserWhereInput[],
+       ?   OR?: UserWhereInput[],
+       ?   NOT?: UserWhereInput | UserWhereInput[],
+       ?   passwordHash?: StringFilter | String,
+       ?   createdAt?: DateTimeFilter | DateTime,
+       ?   votes?: VoteListRelationFilter,
+       ?   userGames?: UserGameListRelationFilter
+         }
+       })
+
+Argument `where` of type UserWhereUniqueInput needs at least one of `id`, `username` or `email` arguments. Available options are marked with ?.
+    at throwValidationException (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async loginUser (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:16)
+    at async login (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\controllers\auth.controller.ts:16:20) {
+  clientVersion: '6.19.3'
+}
+[NogaGames] Erro não tratado: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:34
+
+  51   username: string,
+  52   password: string,
+  53 ): Promise<{ token: string }> {
+→ 54   const user = await prisma.user.findUnique({
+         where: {
+           username: undefined,
+       ?   id?: String,
+       ?   email?: String,
+       ?   AND?: UserWhereInput | UserWhereInput[],
+       ?   OR?: UserWhereInput[],
+       ?   NOT?: UserWhereInput | UserWhereInput[],
+       ?   passwordHash?: StringFilter | String,
+       ?   createdAt?: DateTimeFilter | DateTime,
+       ?   votes?: VoteListRelationFilter,
+       ?   userGames?: UserGameListRelationFilter
+         }
+       })
+
+Argument `where` of type UserWhereUniqueInput needs at least one of `id`, `username` or `email` arguments. Available options are marked with ?.
+    at throwValidationException (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async loginUser (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:16)
+    at async login (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\controllers\auth.controller.ts:16:20) {
+  clientVersion: '6.19.3'
+}
+[NogaGames] Erro não tratado: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:34
+
+  51   username: string,
+  52   password: string,
+  53 ): Promise<{ token: string }> {
+→ 54   const user = await prisma.user.findUnique({
+         where: {
+           username: undefined,
+       ?   id?: String,
+       ?   email?: String,
+       ?   AND?: UserWhereInput | UserWhereInput[],
+       ?   OR?: UserWhereInput[],
+       ?   NOT?: UserWhereInput | UserWhereInput[],
+       ?   passwordHash?: StringFilter | String,
+       ?   createdAt?: DateTimeFilter | DateTime,
+       ?   votes?: VoteListRelationFilter,
+       ?   userGames?: UserGameListRelationFilter
+         }
+       })
+
+Argument `where` of type UserWhereUniqueInput needs at least one of `id`, `username` or `email` arguments. Available options are marked with ?.
+    at throwValidationException (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async loginUser (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:16)
+    at async login (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\controllers\auth.controller.ts:16:20) {
+  clientVersion: '6.19.3'
+}
+[NogaGames] Erro não tratado: PrismaClientValidationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:34
+
+  51   username: string,
+  52   password: string,
+  53 ): Promise<{ token: string }> {
+→ 54   const user = await prisma.user.findUnique({
+         where: {
+           username: undefined,
+       ?   id?: String,
+       ?   email?: String,
+       ?   AND?: UserWhereInput | UserWhereInput[],
+       ?   OR?: UserWhereInput[],
+       ?   NOT?: UserWhereInput | UserWhereInput[],
+       ?   passwordHash?: StringFilter | String,
+       ?   createdAt?: DateTimeFilter | DateTime,
+       ?   votes?: VoteListRelationFilter,
+       ?   userGames?: UserGameListRelationFilter
+         }
+       })
+
+Argument `where` of type UserWhereUniqueInput needs at least one of `id`, `username` or `email` arguments. Available options are marked with ?.
+    at throwValidationException (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\core\errorRendering\throwValidationException.ts:45:9)
+    at ei.handleRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:202:7)
+    at ei.handleAndLogRequestError (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:174:12)
+    at ei.request (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\RequestHandler.ts:143:12)
+    at async a (C:\Users\Cliente\Documents\Default Project\nogagames\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:833:24)
+    at async loginUser (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\services\auth.service.ts:54:16)
+    at async login (C:\Users\Cliente\Documents\Default Project\nogagames\backend\src\controllers\auth.controller.ts:16:20) {
+  clientVersion: '6.19.3'
+}

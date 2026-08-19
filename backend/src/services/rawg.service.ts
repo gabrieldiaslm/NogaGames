@@ -114,8 +114,26 @@ export const MOCK_CATALOG: RawgGame[] = [
   mockEntry(200055, "Mullet MadJack", "2024", "https://media.rawg.io/media/resize/1280/-/games/abb/abb7001813e2976becc44289d61d59c3.jpg", 3),
 ];
 
-function mockHours(externalId: number): number | null {
-  return MOCK_CATALOG.find((game) => game.id === externalId)?.hoursToBeat ?? null;
+export function normalizeTitle(title: string): string {
+  return title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function mockHours(externalId: number, title?: string): number | null {
+  const byId = MOCK_CATALOG.find((game) => game.id === externalId);
+  if (byId) {
+    return byId.hoursToBeat;
+  }
+  if (title) {
+    const byTitle = MOCK_CATALOG.find((game) => normalizeTitle(game.name) === normalizeTitle(title));
+    if (byTitle) {
+      return byTitle.hoursToBeat;
+    }
+  }
+  return null;
 }
 
 export function mockSearch(q: string): GameSearchResult[] {
@@ -142,7 +160,7 @@ export async function searchGamesRawg(q: string): Promise<GameSearchResult[]> {
     });
     return data.results
       .filter((g) => g.name)
-      .map((g) => toSearchResult({ ...g, hoursToBeat: mockHours(g.id) }));
+      .map((g) => toSearchResult({ ...g, hoursToBeat: mockHours(g.id, g.name) }));
   } catch {
     throw new RawgUnavailableError();
   }
@@ -164,7 +182,7 @@ export async function getGameDetailsRawg(externalId: number): Promise<GameSearch
       params: { key },
       timeout: RAWG_TIMEOUT_MS,
     });
-    return toSearchResult({ ...data, hoursToBeat: mockHours(data.id) });
+    return toSearchResult({ ...data, hoursToBeat: mockHours(data.id, data.name) });
   } catch {
     throw new RawgUnavailableError();
   }

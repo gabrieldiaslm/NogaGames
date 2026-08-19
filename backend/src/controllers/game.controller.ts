@@ -49,7 +49,7 @@ export async function getBacklog(req: Request, res: Response, next: NextFunction
 
 export async function getCompleted(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const games = await getCompletedGames();
+    const games = await getCompletedGames(req.userId ?? "");
     res.json(games);
   } catch (err) {
     next(err);
@@ -58,7 +58,7 @@ export async function getCompleted(req: Request, res: Response, next: NextFuncti
 
 export async function getPlaying(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const games = await getPlayingGames();
+    const games = await getPlayingGames(req.userId ?? "");
     res.json(games);
   } catch (err) {
     next(err);
@@ -83,7 +83,7 @@ export async function changeStatus(req: Request, res: Response, next: NextFuncti
       throw new AppError(400, "Status inválido. Use BACKLOG, PLAYING ou COMPLETED.");
     }
 
-    const result = await changeGameStatus(id, status);
+    const result = await changeGameStatus(id, status, req.userId ?? "");
     res.json(result);
   } catch (err) {
     next(err);

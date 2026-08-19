@@ -1,21 +1,21 @@
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../types/errors.js";
 import { GAME_STATUSES, type GameStatus } from "../types/index.js";
-import { getGameDetailsRawg, MOCK_CATALOG } from "./rawg.service.js";
+import { getGameDetailsRawg, MOCK_CATALOG, normalizeTitle } from "./rawg.service.js";
 
-function resolveHours(game: { externalId: number | null; hoursToBeat: number | null }): number | null {
+function resolveHours(game: { externalId: number | null; title: string; hoursToBeat: number | null }): number | null {
   if (game.hoursToBeat !== null && game.hoursToBeat !== undefined) {
     return game.hoursToBeat;
   }
-  if (game.externalId !== null) {
-    return MOCK_CATALOG.find((catalogGame) => catalogGame.id === game.externalId)?.hoursToBeat ?? null;
-  }
-  return null;
+  const catalogGame = MOCK_CATALOG.find(
+    (catalog) => catalog.id === game.externalId || normalizeTitle(catalog.name) === normalizeTitle(game.title),
+  );
+  return catalogGame?.hoursToBeat ?? null;
 }
 
 const ALLOWED_TRANSITIONS: Record<GameStatus, GameStatus[]> = {
   BACKLOG: ["PLAYING"],
-  PLAYING: ["COMPLETED"],
+  PLAYING: ["COMPLETED", "BACKLOG"],
   COMPLETED: ["BACKLOG"],
 };
 
@@ -53,6 +53,7 @@ export async function addGameByExternalId(externalId: number): Promise<{ id: str
 export async function changeGameStatus(
   gameId: string,
   next: GameStatus,
+  userId: string,
 ): Promise<{ id: string; status: GameStatus }> {
   const game = await prisma.game.findUnique({ where: { id: gameId } });
 
@@ -63,6 +64,37 @@ export async function changeGameStatus(
   const current = game.status as GameStatus;
   if (!canTransition(current, next)) {
     throw new AppError(400, `Transição inválida: ${current} -> ${next}.`);
+  }
+
+  const myProgress = await prisma.userGame.findUnique({
+    where: { userId_gameId: { userId, gameId } },
+  });
+
+  if (current === "PLAYING") {
+    const ownerOfProgress = myProgress?.status === "PLAYING";
+    if (next === "COMPLETED" && !ownerOfProgress) {
+      throw new AppError(403, "Apenas quem está jogando o jogo pode marcá-lo como zerado.");
+    }
+    if (next === "BACKLOG" && !ownerOfProgress) {
+      throw new AppError(403, "Apenas quem está jogando o jogo pode devolvê-lo ao backlog.");
+    }
+  }
+
+  if (current === "COMPLETED" && next === "BACKLOG" && myProgress?.status !== "COMPLETED") {
+    throw new AppError(403, "Apenas quem zerou o jogo pode reintegrá-lo ao backlog.");
+  }
+
+  if (next === "BACKLOG" && myProgress) {
+    await prisma.userGame.delete({ where: { id: myProgress.id } });
+  } else if (myProgress) {
+    await prisma.userGame.update({
+      where: { id: myProgress.id },
+      data: { status: next },
+    });
+  } else {
+    await prisma.userGame.create({
+      data: { userId, gameId, status: next },
+    });
   }
 
   const updated = await prisma.game.update({
@@ -128,38 +160,42 @@ export async function getBacklogGames(userId: string): Promise<
   }));
 }
 
-export async function getCompletedGames(): Promise<
+export async function getCompletedGames(userId: string): Promise<
   Array<{ id: string; title: string; coverImage: string; updatedAt: string; hoursToBeat: number | null }>
 > {
-  const games = await prisma.game.findMany({
-    where: { status: "COMPLETED" },
+  const games = await prisma.userGame.findMany({
+    where: { userId, status: "COMPLETED" },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, externalId: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
+    include: {
+      game: { select: { id: true, externalId: true, title: true, coverImage: true, hoursToBeat: true } },
+    },
   });
 
-  return games.map((game) => ({
+  return games.map(({ game, updatedAt }) => ({
     id: game.id,
     title: game.title,
     coverImage: game.coverImage,
     hoursToBeat: resolveHours(game),
-    updatedAt: game.updatedAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
   }));
 }
 
-export async function getPlayingGames(): Promise<
+export async function getPlayingGames(userId: string): Promise<
   Array<{ id: string; title: string; coverImage: string; updatedAt: string; hoursToBeat: number | null }>
 > {
-  const games = await prisma.game.findMany({
-    where: { status: "PLAYING" },
+  const games = await prisma.userGame.findMany({
+    where: { userId, status: "PLAYING" },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, externalId: true, title: true, coverImage: true, updatedAt: true, hoursToBeat: true },
+    include: {
+      game: { select: { id: true, externalId: true, title: true, coverImage: true, hoursToBeat: true } },
+    },
   });
 
-  return games.map((game) => ({
+  return games.map(({ game, updatedAt }) => ({
     id: game.id,
     title: game.title,
     coverImage: game.coverImage,
     hoursToBeat: resolveHours(game),
-    updatedAt: game.updatedAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
   }));
 }
