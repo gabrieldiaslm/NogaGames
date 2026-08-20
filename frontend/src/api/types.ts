@@ -11,6 +11,8 @@ export interface GameSearchResult {
   coverImage: string;
   releaseYear: number | null;
   hoursToBeat: number | null;
+  genre: string | null;
+  platform: string | null;
 }
 
 export interface BacklogGameItem {
@@ -26,16 +28,46 @@ export interface CompletedGameItem {
   id: string;
   title: string;
   coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
+  platform: string | null;
   updatedAt: string;
   hoursToBeat: number | null;
+  avgRating: number | null;
+  reviewsCount: number;
 }
 
 export interface DashboardGame {
   id: string;
   title: string;
   coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
   votesCount: number;
   hoursToBeat: number | null;
+}
+
+export interface RandomGame {
+  id: string;
+  title: string;
+  coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
+  hoursToBeat: number | null;
+}
+
+export interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user: { id: string; username: string; avatarUrl: string | null };
+}
+
+export interface GroupFilters {
+  genres: string[];
+  years: number[];
+  platforms: string[];
 }
 
 export interface GroupSummary {
@@ -64,4 +96,4 @@ export interface Voter {
   avatarUrl: string | null;
 }
 
-export type GameStatus = "BACKLOG" | "PLAYING" | "COMPLETED";
+export type GameStatus = "BACKLOG" | "PLAYING" | "COMPLETED" | "DROPPED";

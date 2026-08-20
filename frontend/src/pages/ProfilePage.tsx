@@ -5,7 +5,8 @@ import { api, getErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { AuthUser, CompletedGameItem, GroupSummary } from "../api/types";
 import { GameCover } from "../components/GameCover";
-import { LogoutIcon, PlayIcon, RefreshIcon } from "../components/Icons";
+import { LogoutIcon, PlayIcon, RefreshIcon, XIcon } from "../components/Icons";
+import { ReviewModal } from "../components/ReviewModal";
 import { formatHours } from "../utils/format";
 
 interface PlayingGame extends CompletedGameItem {
@@ -24,6 +25,7 @@ export function ProfilePage() {
   const [username, setUsername] = useState(user?.username ?? "");
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
   const [saving, setSaving] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<PlayingGame | null>(null);
 
   const loadPlaying = useCallback(async () => {
     try {
@@ -46,15 +48,17 @@ export function ProfilePage() {
     return groups.find((group) => group.id === groupId)?.name ?? null;
   }
 
-  async function changeStatus(game: PlayingGame, status: "COMPLETED" | "BACKLOG") {
+  async function changeStatus(game: PlayingGame, status: "COMPLETED" | "BACKLOG" | "DROPPED") {
     setBusyId(game.id);
     setMessage(null);
     try {
       await api.patch(`/games/${game.id}/status`, { status });
-      setMessage({
-        type: "ok",
-        text: status === "COMPLETED" ? `${game.title} zerado!` : `${game.title} voltou ao backlog.`,
-      });
+      const texts: Record<string, string> = {
+        COMPLETED: `${game.title} zerado!`,
+        BACKLOG: `${game.title} voltou ao backlog.`,
+        DROPPED: `${game.title} marcado como abandonado.`,
+      };
+      setMessage({ type: "ok", text: texts[status] });
       await loadPlaying();
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
@@ -166,7 +170,7 @@ export function ProfilePage() {
                 </div>
                 <button
                   className="btn icon"
-                  onClick={() => changeStatus(game, "COMPLETED")}
+                  onClick={() => setReviewTarget(game)}
                   disabled={busyId === game.id}
                   aria-label={`Marcar ${game.title} como zerado`}
                 >
@@ -180,6 +184,14 @@ export function ProfilePage() {
                 >
                   <RefreshIcon />
                 </button>
+                <button
+                  className="btn icon danger-icon"
+                  onClick={() => changeStatus(game, "DROPPED")}
+                  disabled={busyId === game.id}
+                  aria-label={`Desistir de ${game.title}`}
+                >
+                  <XIcon />
+                </button>
               </li>
             ))}
           </ul>
@@ -190,6 +202,15 @@ export function ProfilePage() {
         <LogoutIcon />
         Sair da conta
       </button>
+
+      {reviewTarget && (
+        <ReviewModal
+          game={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSaved={loadPlaying}
+          onMessage={setMessage}
+        />
+      )}
     </main>
   );
 }

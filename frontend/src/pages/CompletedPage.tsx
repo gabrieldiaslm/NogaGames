@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { CompletedGameItem } from "../api/types";
 import { GameCover } from "../components/GameCover";
+import { ReviewDetailModal } from "../components/ReviewDetailModal";
+import { StarRating } from "../components/StarRating";
 import { RefreshIcon } from "../components/Icons";
 import { formatHours } from "../utils/format";
 
@@ -21,6 +23,7 @@ export function CompletedPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<CompletedGameItem | null>(null);
 
   const loadCompleted = useCallback(async () => {
     try {
@@ -69,16 +72,30 @@ export function CompletedPage() {
         <ul className="game-list">
           {games.map((game) => (
             <li key={game.id} className="game-row">
-              <GameCover src={game.coverImage} alt={game.title} className="thumb" />
-              <div className="game-row-info">
-                <strong>{game.title}</strong>
-                <span className="muted">
-                  Zerado em {formatDate(game.updatedAt)}
-                  {formatHours(game.hoursToBeat)
-                    ? ` \u00b7 ${formatHours(game.hoursToBeat)}`
-                    : ""}
-                </span>
-              </div>
+              <button
+                className="game-row-main"
+                onClick={() => setSelected(game)}
+                aria-label={`Ver avaliações de ${game.title}`}
+              >
+                <GameCover src={game.coverImage} alt={game.title} className="thumb" />
+                <div className="game-row-info">
+                  <strong>{game.title}</strong>
+                  <span className="muted">
+                    Zerado em {formatDate(game.updatedAt)}
+                    {formatHours(game.hoursToBeat) ? ` \u00b7 ${formatHours(game.hoursToBeat)}` : ""}
+                  </span>
+                  {game.reviewsCount > 0 ? (
+                    <span className="avg-row">
+                      <StarRating value={game.avgRating ?? 0} size={14} />
+                      <span className="muted">
+                        ({game.reviewsCount} avaliaç{game.reviewsCount === 1 ? "ão" : "ões"})
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="muted">Sem avaliações ainda</span>
+                  )}
+                </div>
+              </button>
               <button
                 className="btn icon"
                 onClick={() => reintegrate(game)}
@@ -90,6 +107,10 @@ export function CompletedPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {selected && (
+        <ReviewDetailModal game={selected} onClose={() => setSelected(null)} onMessage={setMessage} />
       )}
     </main>
   );

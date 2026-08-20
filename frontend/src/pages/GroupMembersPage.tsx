@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { GroupMemberItem, GroupSummary } from "../api/types";
-import { CopyIcon, LogoutIcon } from "../components/Icons";
+import { CopyIcon, LogoutIcon, UsersIcon } from "../components/Icons";
 
 export function GroupMembersPage() {
   const { groupId = "" } = useParams();
+  const navigate = useNavigate();
   const [members, setMembers] = useState<GroupMemberItem[]>([]);
   const [group, setGroup] = useState<GroupSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +54,23 @@ export function GroupMembersPage() {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
       setRemovingId(null);
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!group) return;
+    const confirmed = window.confirm(
+      `Excluir a turma "${group.name}"? Todos os jogos, votos e avaliações serão apagados. Essa ação não pode ser desfeita.`,
+    );
+    if (!confirmed) return;
+    setDeleting(true);
+    setMessage(null);
+    try {
+      await api.delete(`/groups/${groupId}`);
+      navigate("/");
+    } catch (err) {
+      setMessage({ type: "error", text: getErrorMessage(err) });
+      setDeleting(false);
     }
   }
 
@@ -107,6 +126,16 @@ export function GroupMembersPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {isAdmin && (
+        <section aria-label="Zona de risco">
+          <h2 className="section-title">Zona de risco</h2>
+          <button className="btn danger full" onClick={handleDeleteGroup} disabled={deleting}>
+            <UsersIcon />
+            {deleting ? "Excluindo..." : "Excluir turma"}
+          </button>
+        </section>
       )}
     </main>
   );

@@ -187,8 +187,6 @@ export async function removeGroupMember(
 }
 
 export async function getGroupById(userId: string, groupId: string): Promise<GroupSummary> {
-  await requireGroupMember(userId, groupId);
-
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: { _count: { select: { members: true, games: true } } },
@@ -196,6 +194,8 @@ export async function getGroupById(userId: string, groupId: string): Promise<Gro
   if (!group) {
     throw new AppError(404, "Grupo não encontrado.");
   }
+
+  await requireGroupMember(userId, groupId);
 
   const myRole = (await prisma.groupMember.findUnique({
     where: { userId_groupId: { userId, groupId } },
@@ -213,4 +213,17 @@ export async function getGroupById(userId: string, groupId: string): Promise<Gro
     myRole: myRole ?? "MEMBER",
     createdAt: group.createdAt.toISOString(),
   };
+}
+
+export async function deleteGroup(actorId: string, groupId: string): Promise<void> {
+  await requireGroupAdmin(actorId, groupId);
+
+  try {
+    await prisma.group.delete({ where: { id: groupId } });
+  } catch (err) {
+    if ((err as { code?: string }).code === "P2025") {
+      throw new AppError(404, "Grupo não encontrado.");
+    }
+    throw err;
+  }
 }

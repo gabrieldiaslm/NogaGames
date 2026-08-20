@@ -11,7 +11,77 @@ interface RawgGame {
   background_image: string | null;
   released: string | null;
   hoursToBeat: number | null;
+  genres?: Array<{ name: string }>;
+  platforms?: Array<{ platform: { name: string } }>;
 }
+
+const CATALOG_META: Record<number, { genre: string; platform: string }> = {
+  3328: { genre: "RPG", platform: "PC" },
+  58175: { genre: "RPG", platform: "PC" },
+  34125: { genre: "Action", platform: "PC" },
+  34269: { genre: "Platformer", platform: "PC" },
+  9767: { genre: "Platformer", platform: "PC" },
+  654: { genre: "Simulation", platform: "PC" },
+  8515: { genre: "RPG", platform: "PC" },
+  58718: { genre: "Action", platform: "PlayStation" },
+  33824: { genre: "Action", platform: "PlayStation" },
+  4476: { genre: "Puzzle", platform: "PC" },
+  200001: { genre: "Adventure", platform: "PC" },
+  200002: { genre: "Adventure", platform: "PlayStation" },
+  200003: { genre: "Action", platform: "PC" },
+  200004: { genre: "Adventure", platform: "PC" },
+  200005: { genre: "Action", platform: "PlayStation" },
+  200006: { genre: "Action", platform: "Xbox" },
+  200007: { genre: "Horror", platform: "PC" },
+  200008: { genre: "Horror", platform: "PC" },
+  200009: { genre: "RPG", platform: "PlayStation" },
+  200010: { genre: "RPG", platform: "PC" },
+  200011: { genre: "RPG", platform: "PC" },
+  200012: { genre: "RPG", platform: "PC" },
+  200013: { genre: "Fighting", platform: "PC" },
+  200014: { genre: "Adventure", platform: "PC" },
+  200015: { genre: "Platformer", platform: "PC" },
+  200016: { genre: "Adventure", platform: "PC" },
+  200017: { genre: "Adventure", platform: "Xbox" },
+  200018: { genre: "Action", platform: "Switch" },
+  200019: { genre: "Adventure", platform: "PlayStation" },
+  200020: { genre: "Adventure", platform: "PlayStation" },
+  200021: { genre: "RPG", platform: "PC" },
+  200022: { genre: "Shooter", platform: "PC" },
+  200023: { genre: "Action", platform: "PlayStation" },
+  200024: { genre: "Shooter", platform: "PC" },
+  200025: { genre: "Shooter", platform: "PC" },
+  200026: { genre: "Shooter", platform: "PC" },
+  200027: { genre: "Action", platform: "Xbox" },
+  200028: { genre: "Action", platform: "PlayStation" },
+  200029: { genre: "Adventure", platform: "Nintendo" },
+  200030: { genre: "Adventure", platform: "Nintendo" },
+  200031: { genre: "Strategy", platform: "PC" },
+  200032: { genre: "Adventure", platform: "PC" },
+  200033: { genre: "Adventure", platform: "Switch" },
+  200034: { genre: "RPG", platform: "PC" },
+  200035: { genre: "RPG", platform: "Xbox" },
+  200036: { genre: "RPG", platform: "PlayStation" },
+  200037: { genre: "Platformer", platform: "PlayStation" },
+  200038: { genre: "Action", platform: "PlayStation" },
+  200039: { genre: "RPG", platform: "PlayStation" },
+  200040: { genre: "Action", platform: "PC" },
+  200041: { genre: "RPG", platform: "PC" },
+  200042: { genre: "Action", platform: "PC" },
+  200043: { genre: "RPG", platform: "PC" },
+  200044: { genre: "Action", platform: "PC" },
+  200045: { genre: "Platformer", platform: "PlayStation" },
+  200046: { genre: "Action", platform: "PlayStation" },
+  200047: { genre: "Adventure", platform: "Xbox" },
+  200048: { genre: "Horror", platform: "PC" },
+  200049: { genre: "Horror", platform: "Xbox" },
+  200050: { genre: "Action", platform: "PlayStation" },
+  200051: { genre: "RPG", platform: "PC" },
+  200052: { genre: "RPG", platform: "PC" },
+  200053: { genre: "Platformer", platform: "PC" },
+  200054: { genre: "Action", platform: "PlayStation" },
+  200055: { genre: "Shooter", platform: "PC" },
+};
 
 export class RawgUnavailableError extends Error {
   constructor() {
@@ -21,12 +91,16 @@ export class RawgUnavailableError extends Error {
 }
 
 function toSearchResult(game: RawgGame): GameSearchResult {
+  const meta = CATALOG_META[game.id];
+  const rawYear = game.released ? Number(game.released.slice(0, 4)) : null;
   return {
     externalId: game.id,
     title: game.name,
     coverImage: game.background_image ?? "",
-    releaseYear: game.released ? new Date(game.released).getFullYear() : null,
+    releaseYear: rawYear && rawYear > 0 ? rawYear : null,
     hoursToBeat: game.hoursToBeat,
+    genre: game.genres?.[0]?.name ?? meta?.genre ?? null,
+    platform: game.platforms?.[0]?.platform.name ?? meta?.platform ?? null,
   };
 }
 

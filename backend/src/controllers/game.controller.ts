@@ -2,13 +2,12 @@ import type { NextFunction, Request, Response } from "express";
 import {
   addGameByExternalId,
   changeGameStatus,
-  getBacklogGames,
-  getCompletedGames,
-  getDashboardWinner,
+  getGameReviews,
   getGameVotes,
   getPlayingGames,
   isGameStatus,
   removeGame,
+  upsertGameReview,
 } from "../services/game.service.js";
 import { addVote, removeVote } from "../services/vote.service.js";
 import { searchGamesRawg } from "../services/rawg.service.js";
@@ -44,24 +43,6 @@ export async function addGame(req: Request, res: Response, next: NextFunction): 
   }
 }
 
-export async function getBacklog(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const games = await getBacklogGames(req.params.id, req.userId ?? "");
-    res.json(games);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function getCompleted(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const games = await getCompletedGames(req.params.id, req.userId ?? "");
-    res.json(games);
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function getPlaying(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const games = await getPlayingGames(req.userId ?? "");
@@ -71,25 +52,16 @@ export async function getPlaying(req: Request, res: Response, next: NextFunction
   }
 }
 
-export async function getDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
-  try {
-    const winner = await getDashboardWinner(req.params.id, req.userId ?? "");
-    res.json(winner);
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function changeStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const { status } = req.body ?? {};
+    const { status, rating, comment } = req.body ?? {};
 
     if (!isGameStatus(status)) {
-      throw new AppError(400, "Status inválido. Use BACKLOG, PLAYING ou COMPLETED.");
+      throw new AppError(400, "Status inválido. Use BACKLOG, PLAYING, COMPLETED ou DROPPED.");
     }
 
-    const result = await changeGameStatus(id, status, req.userId ?? "");
+    const result = await changeGameStatus(id, status, req.userId ?? "", { rating, comment });
     res.json(result);
   } catch (err) {
     next(err);
@@ -136,6 +108,25 @@ export async function deleteGame(req: Request, res: Response, next: NextFunction
   try {
     await removeGame(req.params.id, req.userId ?? "");
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function reviewGame(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { rating, comment } = req.body ?? {};
+    const result = await upsertGameReview(req.params.id, req.userId ?? "", rating, comment);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getReviews(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const reviews = await getGameReviews(req.params.id, req.userId ?? "");
+    res.json(reviews);
   } catch (err) {
     next(err);
   }

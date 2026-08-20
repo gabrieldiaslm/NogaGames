@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
-import type { BacklogGameItem } from "../api/types";
+import type { BacklogGameItem, GroupFilters } from "../api/types";
+import { FilterSheet, type ActiveFilters } from "../components/FilterSheet";
 import { GameDetailModal, type ModalGame } from "../components/GameDetailModal";
 import { GameCover } from "../components/GameCover";
 import { formatHours } from "../utils/format";
+
+const EMPTY_FILTERS: ActiveFilters = { genre: "", year: "", platform: "" };
+
+function filtersToParams(filters: ActiveFilters): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (filters.genre) params.genre = filters.genre;
+  if (filters.year) params.year = filters.year;
+  if (filters.platform) params.platform = filters.platform;
+  return params;
+}
 
 export function BacklogPage() {
   const { groupId = "" } = useParams();
@@ -12,21 +23,36 @@ export function BacklogPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [selected, setSelected] = useState<ModalGame | null>(null);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState<GroupFilters>({ genres: [], years: [], platforms: [] });
+  const [activeFilters, setActiveFilters] = useState<ActiveFilters>(EMPTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<ActiveFilters>(EMPTY_FILTERS);
+
+  const hasActiveFilters = appliedFilters.genre !== "" || appliedFilters.year !== "" || appliedFilters.platform !== "";
 
   const loadBacklog = useCallback(async () => {
     try {
-      const { data } = await api.get<BacklogGameItem[]>(`/groups/${groupId}/backlog`);
+      const { data } = await api.get<BacklogGameItem[]>(`/groups/${groupId}/backlog`, {
+        params: filtersToParams(appliedFilters),
+      });
       setGames(data);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
+  }, [groupId, appliedFilters]);
 
   useEffect(() => {
     loadBacklog();
   }, [loadBacklog]);
+
+  useEffect(() => {
+    api
+      .get<GroupFilters>(`/groups/${groupId}/filters`)
+      .then(({ data }) => setFilterOptions(data))
+      .catch(() => undefined);
+  }, [groupId]);
 
   async function startPlaying(game: ModalGame) {
     setMessage(null);
@@ -40,10 +66,33 @@ export function BacklogPage() {
     }
   }
 
+  function handleApply() {
+    setAppliedFilters(activeFilters);
+    setFilterOpen(false);
+  }
+
+  function handleClear() {
+    setActiveFilters(EMPTY_FILTERS);
+    setAppliedFilters(EMPTY_FILTERS);
+    setFilterOpen(false);
+  }
+
   return (
     <main className="page">
-      <h1>Backlog</h1>
-      <p className="page-subtitle">Vote no próximo jogo para zerar.</p>
+      <div className="page-head-row">
+        <div>
+          <h1>Backlog</h1>
+          <p className="page-subtitle">Vote no próximo jogo para zerar.</p>
+        </div>
+        <button
+          className={`btn filter-btn${hasActiveFilters ? " active" : ""}`}
+          onClick={() => setFilterOpen(true)}
+          aria-label="Abrir filtros"
+        >
+          🔍 Filtrar
+          {hasActiveFilters ? ` (${[appliedFilters.genre, appliedFilters.year, appliedFilters.platform].filter(Boolean).length})` : ""}
+        </button>
+      </div>
 
       {message && <div className={`banner ${message.type}`}>{message.text}</div>}
 
@@ -51,8 +100,17 @@ export function BacklogPage() {
         <p className="muted">Carregando...</p>
       ) : games.length === 0 ? (
         <div className="empty-state">
-          <p>Backlog vazio.</p>
-          <p className="muted">Adicione jogos pela busca no Dashboard para começar a votação.</p>
+          <p>{hasActiveFilters ? "Nenhum jogo encontrado com esses filtros" : "Backlog vazio."}</p>
+          <p className="muted">
+            {hasActiveFilters
+              ? "Ajuste ou limpe os filtros para ver mais jogos."
+              : "Adicione jogos pela busca no Dashboard para começar a votação."}
+          </p>
+          {hasActiveFilters && (
+            <button className="btn" onClick={handleClear}>
+              Limpar filtros
+            </button>
+          )}
         </div>
       ) : (
         <ul className="game-list">
@@ -98,6 +156,16 @@ export function BacklogPage() {
           onShowMessage={setMessage}
         />
       )}
+
+      <FilterSheet
+        open={filterOpen}
+        options={filterOptions}
+        active={activeFilters}
+        onChange={setActiveFilters}
+        onApply={handleApply}
+        onClear={handleClear}
+        onClose={() => setFilterOpen(false)}
+      />
     </main>
   );
 }

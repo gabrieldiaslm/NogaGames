@@ -1,4 +1,4 @@
-export const GAME_STATUSES = ["BACKLOG", "PLAYING", "COMPLETED"] as const;
+export const GAME_STATUSES = ["BACKLOG", "PLAYING", "COMPLETED", "DROPPED"] as const;
 
 export type GameStatus = (typeof GAME_STATUSES)[number];
 
@@ -14,6 +14,8 @@ export interface GameSearchResult {
   coverImage: string;
   releaseYear: number | null;
   hoursToBeat: number | null;
+  genre: string | null;
+  platform: string | null;
 }
 
 export interface BacklogGameItem {
@@ -29,16 +31,46 @@ export interface CompletedGameItem {
   id: string;
   title: string;
   coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
+  platform: string | null;
   updatedAt: string;
   hoursToBeat: number | null;
+  avgRating: number | null;
+  reviewsCount: number;
 }
 
 export interface DashboardGame {
   id: string;
   title: string;
   coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
   votesCount: number;
   hoursToBeat: number | null;
+}
+
+export interface RandomGame {
+  id: string;
+  title: string;
+  coverImage: string;
+  releaseYear: number | null;
+  genre: string | null;
+  hoursToBeat: number | null;
+}
+
+export interface ReviewItem {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user: { id: string; username: string; avatarUrl: string | null };
+}
+
+export interface GroupFilters {
+  genres: string[];
+  years: number[];
+  platforms: string[];
 }
 
 export interface VoteResult {

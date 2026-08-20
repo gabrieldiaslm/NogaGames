@@ -742,6 +742,259 @@ button {
   flex: 1;
 }
 
+/* ---------- Star rating ---------- */
+
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #f5c518;
+}
+
+.star-row {
+  position: relative;
+  display: inline-block;
+  line-height: 1;
+}
+
+.star-empty {
+  opacity: 0.3;
+}
+
+.star-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.star-number {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.star-input {
+  display: flex;
+  gap: 4px;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 34px;
+  line-height: 1;
+  color: var(--surface-2);
+  transition: color 0.1s ease, transform 0.05s ease;
+}
+
+.star-btn.selected {
+  color: #f5c518;
+}
+
+.star-btn:active {
+  transform: scale(0.9);
+}
+
+.star-inline {
+  color: #f5c518;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+/* ---------- Review ---------- */
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.review-textarea {
+  min-height: 90px;
+  resize: vertical;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  color: inherit;
+}
+
+.review-textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.char-counter {
+  align-self: flex-end;
+  font-size: 12px;
+}
+
+.avg-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  color: inherit;
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.review-head .star-inline {
+  margin-left: auto;
+}
+
+.review-comment {
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ---------- Page header row ---------- */
+
+.page-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-head-row h1,
+.page-head-row .page-subtitle {
+  margin-top: 0;
+}
+
+.filter-btn {
+  flex-shrink: 0;
+  font-size: 14px;
+  padding: 8px 12px;
+  min-height: 40px;
+}
+
+.filter-btn.active {
+  background: var(--primary);
+}
+
+.section-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-head-row .section-title {
+  margin-bottom: 0;
+}
+
+.surprise-btn {
+  background: linear-gradient(135deg, #f5c518, #e8960c);
+  color: #1a1400;
+  font-size: 14px;
+  padding: 8px 14px;
+  min-height: 40px;
+}
+
+/* ---------- Bottom sheet ---------- */
+
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 18, 0.75);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20;
+}
+
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 480px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sheet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.sheet-field select {
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+
+.sheet-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.sheet-actions .btn {
+  flex: 1;
+}
+
+@media (min-width: 600px) {
+  .sheet-overlay {
+    align-items: center;
+  }
+
+  .sheet {
+    border-radius: var(--radius);
+  }
+}
+
+/* ---------- Surprise card ---------- */
+
+.surprise-card {
+  background: linear-gradient(160deg, #241f05, #1a1e33);
+  border: 2px solid #f5c518;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(245, 197, 24, 0.15);
+}
+
 @media (min-width: 600px) {
   .modal-overlay {
     align-items: center;

@@ -5,7 +5,9 @@ import {
   changeStatus,
   deleteGame,
   getPlaying,
+  getReviews,
   reintegrate,
+  reviewGame,
   searchGames,
   unvote,
   vote,
@@ -24,4 +26,6 @@ gameRoutes.post("/:id/vote", vote);
 gameRoutes.delete("/:id/vote", unvote);
 gameRoutes.patch("/:id/status", changeStatus);
 gameRoutes.patch("/:id/reintegrate", reintegrate);
+gameRoutes.post("/:id/review", reviewGame);
+gameRoutes.get("/:id/reviews", getReviews);
 gameRoutes.delete("/:id", deleteGame);
