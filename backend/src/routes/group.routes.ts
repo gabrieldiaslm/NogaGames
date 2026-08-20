@@ -8,6 +8,7 @@ import {
   getGroupBacklog,
   getGroupCompleted,
   getGroupDashboard,
+  getGroupReviewsHandler,
   getRandom,
   joinByCode,
   joinGroup,
@@ -31,5 +32,6 @@ groupRoutes.get("/:id/dashboard", getGroupDashboard);
 groupRoutes.get("/:id/backlog", getGroupBacklog);
 groupRoutes.get("/:id/completed", getGroupCompleted);
 groupRoutes.get("/:id/random", getRandom);
+groupRoutes.get("/:id/reviews", getGroupReviewsHandler);
 groupRoutes.get("/:id/filters", getFilters);
 groupRoutes.delete("/:id", deleteGroupHandler);

@@ -875,6 +875,38 @@ button {
   font-style: italic;
 }
 
+.review-feed-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.review-feed-card .thumb {
+  width: 52px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.review-feed-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.review-feed-game {
+  font-size: 15px;
+}
+
+.review-feed-meta {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+}
+
 /* ---------- Page header row ---------- */
 
 .page-head-row {

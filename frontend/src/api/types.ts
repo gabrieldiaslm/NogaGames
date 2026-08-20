@@ -64,6 +64,10 @@ export interface ReviewItem {
   user: { id: string; username: string; avatarUrl: string | null };
 }
 
+export interface GroupReviewItem extends ReviewItem {
+  game: { id: string; title: string; coverImage: string; releaseYear: number | null };
+}
+
 export interface GroupFilters {
   genres: string[];
   years: number[];

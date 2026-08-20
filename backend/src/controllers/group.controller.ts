@@ -9,7 +9,7 @@ import {
   joinGroupByInviteCode,
   removeGroupMember,
 } from "../services/group.service.js";
-import { getBacklogGames, getCompletedGames, getDashboardWinner, getGroupFilters, getRandomBacklogGame } from "../services/game.service.js";
+import { getBacklogGames, getCompletedGames, getDashboardWinner, getGroupFilters, getGroupReviews, getRandomBacklogGame } from "../services/game.service.js";
 
 export async function listGroups(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -128,6 +128,14 @@ export async function getGroupCompleted(req: Request, res: Response, next: NextF
 export async function getGroupDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     res.json(await getDashboardWinner(req.params.id, req.userId ?? ""));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getGroupReviewsHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    res.json(await getGroupReviews(req.params.id, req.userId ?? ""));
   } catch (err) {
     next(err);
   }

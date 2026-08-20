@@ -399,6 +399,28 @@ export async function getGameReviews(gameId: string, userId: string) {
   }));
 }
 
+export async function getGroupReviews(groupId: string, userId: string) {
+  await requireGroupMember(userId, groupId);
+
+  const reviews = await prisma.gameReview.findMany({
+    where: { game: { groupId } },
+    include: {
+      user: { select: { id: true, username: true, avatarUrl: true } },
+      game: { select: { id: true, title: true, coverImage: true, releaseYear: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return reviews.map((review) => ({
+    id: review.id,
+    rating: review.rating,
+    comment: review.comment,
+    createdAt: review.createdAt.toISOString(),
+    user: review.user,
+    game: review.game,
+  }));
+}
+
 export async function getRandomBacklogGame(
   groupId: string,
   userId: string,

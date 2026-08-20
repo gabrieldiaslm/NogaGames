@@ -11,6 +11,7 @@ import { GroupMembersPage } from "./pages/GroupMembersPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ReviewsPage } from "./pages/ReviewsPage";
 
 function ProtectedLayout() {
   const { token } = useAuth();
@@ -30,6 +31,7 @@ function ProtectedLayout() {
           <Route index element={<DashboardPage />} />
           <Route path="backlog" element={<BacklogPage />} />
           <Route path="zerados" element={<CompletedPage />} />
+          <Route path="reviews" element={<ReviewsPage />} />
           <Route path="membros" element={<GroupMembersPage />} />
         </Route>
       </Routes>
