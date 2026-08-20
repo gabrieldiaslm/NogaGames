@@ -1,2 +1,5 @@
-
 backend/dev.log
+backend/prisma/*.db*
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/dev.db.backup*
