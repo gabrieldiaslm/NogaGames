@@ -4,7 +4,7 @@ const TOKEN_KEY = "nogagames_token";
 const USER_KEY = "nogagames_user";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3333",
+  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3000",
 });
 
 api.interceptors.request.use((config) => {

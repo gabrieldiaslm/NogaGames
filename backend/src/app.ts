@@ -1,8 +1,11 @@
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { authRoutes } from "./routes/auth.routes.js";
 import { gameRoutes } from "./routes/game.routes.js";
+import { groupRoutes } from "./routes/group.routes.js";
+import { profileRoutes } from "./routes/profile.routes.js";
 
 function isRenderOrigin(origin: string): boolean {
   try {
@@ -38,6 +41,7 @@ export function createApp(): express.Express {
     }),
   );
 
+  app.use(helmet());
   app.use(express.json());
 
   app.get("/health", (_req, res) => {
@@ -45,7 +49,9 @@ export function createApp(): express.Express {
   });
 
   app.use("/auth", authRoutes);
+  app.use("/groups", groupRoutes);
   app.use("/games", gameRoutes);
+  app.use("/profile", profileRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

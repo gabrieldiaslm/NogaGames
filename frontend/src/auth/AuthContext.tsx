@@ -10,6 +10,7 @@ interface AuthContextValue {
   token: string | null;
   login: (token: string, user: AuthUser) => void;
   logout: () => void;
+  updateUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,9 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((newUser: AuthUser) => {
+    localStorage.setItem(USER_KEY, JSON.stringify(newUser));
+    setUser(newUser);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, token, login, logout }),
-    [user, token, login, logout],
+    () => ({ user, token, login, logout, updateUser }),
+    [user, token, login, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

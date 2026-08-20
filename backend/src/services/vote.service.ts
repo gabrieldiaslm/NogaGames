@@ -1,13 +1,15 @@
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../types/errors.js";
 import type { VoteResult } from "../types/index.js";
+import { requireGroupMember } from "./group.service.js";
 
 export async function addVote(gameId: string, userId: string): Promise<VoteResult> {
-  const game = await prisma.game.findUnique({ where: { id: gameId }, select: { id: true } });
+  const game = await prisma.game.findUnique({ where: { id: gameId }, select: { id: true, groupId: true } });
 
   if (!game) {
     throw new AppError(404, "Jogo não encontrado.");
   }
+  await requireGroupMember(userId, game.groupId);
 
   try {
     await prisma.vote.create({ data: { gameId, userId } });
@@ -23,6 +25,13 @@ export async function addVote(gameId: string, userId: string): Promise<VoteResul
 }
 
 export async function removeVote(gameId: string, userId: string): Promise<VoteResult> {
+  const game = await prisma.game.findUnique({ where: { id: gameId }, select: { id: true, groupId: true } });
+
+  if (!game) {
+    throw new AppError(404, "Jogo não encontrado.");
+  }
+  await requireGroupMember(userId, game.groupId);
+
   const deleted = await prisma.vote.deleteMany({ where: { gameId, userId } });
 
   if (deleted.count === 0) {

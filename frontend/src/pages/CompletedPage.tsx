@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { CompletedGameItem } from "../api/types";
 import { GameCover } from "../components/GameCover";
@@ -15,6 +16,7 @@ function formatDate(iso: string): string {
 }
 
 export function CompletedPage() {
+  const { groupId = "" } = useParams();
   const [games, setGames] = useState<CompletedGameItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
@@ -22,14 +24,14 @@ export function CompletedPage() {
 
   const loadCompleted = useCallback(async () => {
     try {
-      const { data } = await api.get<CompletedGameItem[]>("/games/completed");
+      const { data } = await api.get<CompletedGameItem[]>(`/groups/${groupId}/completed`);
       setGames(data);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
     loadCompleted();
@@ -39,7 +41,7 @@ export function CompletedPage() {
     setBusyId(game.id);
     setMessage(null);
     try {
-      await api.patch(`/games/${game.id}/status`, { status: "BACKLOG" });
+      await api.patch(`/games/${game.id}/reintegrate`);
       setMessage({ type: "ok", text: `${game.title} voltou ao backlog.` });
       await loadCompleted();
     } catch (err) {

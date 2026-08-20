@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import type { GameStatus } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 const db = new DatabaseSync("prisma/dev.db.backup-sqlite");
@@ -42,19 +43,27 @@ function toDate(value: string | number): Date {
 }
 
 const userRows = users.map((u) => ({ ...u, createdAt: toDate(u.createdAt) }));
-const gameRows = games.map((g) => ({
-  ...g,
-  createdAt: toDate(g.createdAt),
-  updatedAt: toDate(g.updatedAt),
-}));
-const voteRows = votes.map((v) => ({ ...v, createdAt: toDate(v.createdAt) }));
-
-console.log(`Lidos do SQLite: ${users.length} usuarios, ${games.length} jogos, ${votes.length} votos`);
 
 await prisma.user.createMany({ data: userRows, skipDuplicates: true });
 console.log(`Inseridos: ${users.length} usuarios`);
+
+const defaultGroup = await prisma.group.findFirst({ orderBy: { createdAt: "asc" } });
+if (!defaultGroup) {
+  throw new Error("Nenhum grupo encontrado. Crie um grupo antes de copiar os jogos.");
+}
+
+const gameRows = games.map((g) => ({
+  ...g,
+  status: g.status as GameStatus,
+  groupId: defaultGroup.id,
+  addedById: defaultGroup.ownerId,
+  createdAt: toDate(g.createdAt),
+  updatedAt: toDate(g.updatedAt),
+}));
 await prisma.game.createMany({ data: gameRows, skipDuplicates: true });
-console.log(`Inseridos: ${games.length} jogos`);
+console.log(`Inseridos: ${games.length} jogos (grupo ${defaultGroup.name})`);
+
+const voteRows = votes.map((v) => ({ ...v, createdAt: toDate(v.createdAt) }));
 await prisma.vote.createMany({ data: voteRows, skipDuplicates: true });
 console.log(`Inseridos: ${votes.length} votos`);
 

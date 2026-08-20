@@ -1,59 +1,42 @@
 import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { BacklogGameItem } from "../api/types";
+import { GameDetailModal, type ModalGame } from "../components/GameDetailModal";
 import { GameCover } from "../components/GameCover";
-import { PlayIcon, ThumbsUpIcon } from "../components/Icons";
 import { formatHours } from "../utils/format";
 
 export function BacklogPage() {
+  const { groupId = "" } = useParams();
   const [games, setGames] = useState<BacklogGameItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<ModalGame | null>(null);
 
   const loadBacklog = useCallback(async () => {
     try {
-      const { data } = await api.get<BacklogGameItem[]>("/games/backlog");
+      const { data } = await api.get<BacklogGameItem[]>(`/groups/${groupId}/backlog`);
       setGames(data);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
     loadBacklog();
   }, [loadBacklog]);
 
-  async function toggleVote(game: BacklogGameItem) {
-    setBusyId(game.id);
-    setMessage(null);
-    try {
-      if (game.userVoted) {
-        await api.delete(`/games/${game.id}/vote`);
-      } else {
-        await api.post(`/games/${game.id}/vote`);
-      }
-      await loadBacklog();
-    } catch (err) {
-      setMessage({ type: "error", text: getErrorMessage(err) });
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function startPlaying(game: BacklogGameItem) {
-    setBusyId(game.id);
+  async function startPlaying(game: ModalGame) {
     setMessage(null);
     try {
       await api.patch(`/games/${game.id}/status`, { status: "PLAYING" });
       setMessage({ type: "ok", text: `${game.title} movido para "jogando".` });
+      setSelected(null);
       await loadBacklog();
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
-    } finally {
-      setBusyId(null);
     }
   }
 
@@ -86,25 +69,34 @@ export function BacklogPage() {
                 </span>
               </div>
               <button
-                className={`btn icon vote${game.userVoted ? " voted" : ""}`}
-                onClick={() => toggleVote(game)}
-                disabled={busyId === game.id}
-                aria-label={game.userVoted ? `Remover voto de ${game.title}` : `Votar em ${game.title}`}
-                aria-pressed={game.userVoted}
+                className="btn icon detail"
+                onClick={() =>
+                  setSelected({
+                    id: game.id,
+                    title: game.title,
+                    coverImage: game.coverImage,
+                    votesCount: game.votesCount,
+                    userVoted: game.userVoted,
+                    hoursToBeat: game.hoursToBeat,
+                  })
+                }
+                aria-label={`Ver detalhes de ${game.title}`}
               >
-                <ThumbsUpIcon filled={game.userVoted} />
-              </button>
-              <button
-                className="btn icon"
-                onClick={() => startPlaying(game)}
-                disabled={busyId === game.id}
-                aria-label={`Começar a jogar ${game.title}`}
-              >
-                <PlayIcon />
+                {game.userVoted ? "\u2764" : "\u2192"}
               </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {selected && (
+        <GameDetailModal
+          game={selected}
+          onClose={() => setSelected(null)}
+          onChanged={loadBacklog}
+          onStartPlaying={startPlaying}
+          onShowMessage={setMessage}
+        />
       )}
     </main>
   );

@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import { AppError } from "../types/errors.js";
 import { GAME_STATUSES, type GameStatus } from "../types/index.js";
 import { getGameDetailsRawg, MOCK_CATALOG, normalizeTitle } from "./rawg.service.js";
+import { requireGroupAdmin, requireGroupMember } from "./group.service.js";
 
 function resolveHours(game: { externalId: number | null; title: string; hoursToBeat: number | null }): number | null {
   if (game.hoursToBeat !== null && game.hoursToBeat !== undefined) {
@@ -27,7 +28,21 @@ export function canTransition(from: GameStatus, to: GameStatus): boolean {
   return ALLOWED_TRANSITIONS[from].includes(to);
 }
 
-export async function addGameByExternalId(externalId: number): Promise<{ id: string; title: string; status: GameStatus }> {
+async function findGameForMember(gameId: string, userId: string) {
+  const game = await prisma.game.findUnique({ where: { id: gameId } });
+  if (!game) {
+    throw new AppError(404, "Jogo não encontrado.");
+  }
+  await requireGroupMember(userId, game.groupId);
+  return game;
+}
+
+export async function addGameByExternalId(
+  externalId: number,
+  groupId: string,
+  userId: string,
+): Promise<{ id: string; title: string; status: GameStatus }> {
+  await requireGroupMember(userId, groupId);
   const details = await getGameDetailsRawg(externalId);
 
   try {
@@ -39,12 +54,14 @@ export async function addGameByExternalId(externalId: number): Promise<{ id: str
         releaseYear: details.releaseYear,
         hoursToBeat: details.hoursToBeat,
         status: "BACKLOG",
+        groupId,
+        addedById: userId,
       },
     });
-    return { id: game.id, title: game.title, status: game.status as GameStatus };
+    return { id: game.id, title: game.title, status: game.status };
   } catch (err) {
     if ((err as { code?: string }).code === "P2002") {
-      throw new AppError(409, "Este jogo já está na sua lista.");
+      throw new AppError(409, "Este jogo já está no backlog do grupo.");
     }
     throw err;
   }
@@ -55,13 +72,9 @@ export async function changeGameStatus(
   next: GameStatus,
   userId: string,
 ): Promise<{ id: string; status: GameStatus }> {
-  const game = await prisma.game.findUnique({ where: { id: gameId } });
+  const game = await findGameForMember(gameId, userId);
 
-  if (!game) {
-    throw new AppError(404, "Jogo não encontrado.");
-  }
-
-  const current = game.status as GameStatus;
+  const current = game.status;
   if (!canTransition(current, next)) {
     throw new AppError(400, `Transição inválida: ${current} -> ${next}.`);
   }
@@ -102,18 +115,23 @@ export async function changeGameStatus(
     data: { status: next },
   });
 
-  return { id: updated.id, status: updated.status as GameStatus };
+  return { id: updated.id, status: updated.status };
 }
 
-export async function getDashboardWinner(): Promise<{
+export async function getDashboardWinner(
+  groupId: string,
+  userId: string,
+): Promise<{
   id: string;
   title: string;
   coverImage: string;
   votesCount: number;
   hoursToBeat: number | null;
 } | null> {
+  await requireGroupMember(userId, groupId);
+
   const winner = await prisma.game.findFirst({
-    where: { status: "BACKLOG" },
+    where: { groupId, status: "BACKLOG" },
     orderBy: [{ votes: { _count: "desc" } }, { createdAt: "desc" }],
     select: {
       id: true,
@@ -138,11 +156,16 @@ export async function getDashboardWinner(): Promise<{
   };
 }
 
-export async function getBacklogGames(userId: string): Promise<
+export async function getBacklogGames(
+  groupId: string,
+  userId: string,
+): Promise<
   Array<{ id: string; title: string; coverImage: string; votesCount: number; userVoted: boolean; hoursToBeat: number | null }>
 > {
+  await requireGroupMember(userId, groupId);
+
   const games = await prisma.game.findMany({
-    where: { status: "BACKLOG" },
+    where: { groupId, status: "BACKLOG" },
     orderBy: [{ votes: { _count: "desc" } }, { createdAt: "asc" }],
     include: {
       _count: { select: { votes: true } },
@@ -160,11 +183,16 @@ export async function getBacklogGames(userId: string): Promise<
   }));
 }
 
-export async function getCompletedGames(userId: string): Promise<
+export async function getCompletedGames(
+  groupId: string,
+  userId: string,
+): Promise<
   Array<{ id: string; title: string; coverImage: string; updatedAt: string; hoursToBeat: number | null }>
 > {
+  await requireGroupMember(userId, groupId);
+
   const games = await prisma.userGame.findMany({
-    where: { userId, status: "COMPLETED" },
+    where: { userId, status: "COMPLETED", game: { groupId } },
     orderBy: { updatedAt: "desc" },
     include: {
       game: { select: { id: true, externalId: true, title: true, coverImage: true, hoursToBeat: true } },
@@ -181,13 +209,13 @@ export async function getCompletedGames(userId: string): Promise<
 }
 
 export async function getPlayingGames(userId: string): Promise<
-  Array<{ id: string; title: string; coverImage: string; updatedAt: string; hoursToBeat: number | null }>
+  Array<{ id: string; title: string; coverImage: string; updatedAt: string; hoursToBeat: number | null; groupId: string }>
 > {
   const games = await prisma.userGame.findMany({
     where: { userId, status: "PLAYING" },
     orderBy: { updatedAt: "desc" },
     include: {
-      game: { select: { id: true, externalId: true, title: true, coverImage: true, hoursToBeat: true } },
+      game: { select: { id: true, externalId: true, title: true, coverImage: true, hoursToBeat: true, groupId: true } },
     },
   });
 
@@ -196,6 +224,40 @@ export async function getPlayingGames(userId: string): Promise<
     title: game.title,
     coverImage: game.coverImage,
     hoursToBeat: resolveHours(game),
+    groupId: game.groupId,
     updatedAt: updatedAt.toISOString(),
   }));
+}
+
+export async function getGameVotes(
+  gameId: string,
+  userId: string,
+): Promise<Array<{ id: string; username: string; avatarUrl: string | null }>> {
+  const game = await prisma.game.findUnique({ where: { id: gameId } });
+  if (!game) {
+    throw new AppError(404, "Jogo não encontrado.");
+  }
+  await requireGroupMember(userId, game.groupId);
+
+  const votes = await prisma.vote.findMany({
+    where: { gameId },
+    include: { user: { select: { id: true, username: true, avatarUrl: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return votes.map((vote) => ({
+    id: vote.user.id,
+    username: vote.user.username,
+    avatarUrl: vote.user.avatarUrl,
+  }));
+}
+
+export async function removeGame(gameId: string, userId: string): Promise<void> {
+  const game = await prisma.game.findUnique({ where: { id: gameId } });
+  if (!game) {
+    throw new AppError(404, "Jogo não encontrado.");
+  }
+  await requireGroupAdmin(userId, game.groupId);
+
+  await prisma.game.delete({ where: { id: gameId } });
 }

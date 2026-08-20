@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { useParams } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { DashboardGame, GameSearchResult } from "../api/types";
 import { GameCover } from "../components/GameCover";
@@ -7,6 +8,7 @@ import { PlusIcon, SearchIcon } from "../components/Icons";
 import { formatHours } from "../utils/format";
 
 export function DashboardPage() {
+  const { groupId = "" } = useParams();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GameSearchResult[]>([]);
   const [winner, setWinner] = useState<DashboardGame | null>(null);
@@ -17,12 +19,12 @@ export function DashboardPage() {
 
   const loadWinner = useCallback(async () => {
     try {
-      const { data } = await api.get<DashboardGame | null>("/games/dashboard");
+      const { data } = await api.get<DashboardGame | null>(`/groups/${groupId}/dashboard`);
       setWinner(data);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     }
-  }, []);
+  }, [groupId]);
 
   useEffect(() => {
     loadWinner().finally(() => setLoading(false));
@@ -53,7 +55,7 @@ export function DashboardPage() {
     setAddingId(externalId);
     setMessage(null);
     try {
-      await api.post("/games", { externalId });
+      await api.post("/games", { externalId, groupId });
       setResults((prev) => prev.filter((game) => game.externalId !== externalId));
       setMessage({ type: "ok", text: "Jogo adicionado ao backlog!" });
       await loadWinner();
@@ -71,6 +73,7 @@ export function DashboardPage() {
       await api.patch(`/games/${winner.id}/status`, { status: "PLAYING" });
       setMessage({ type: "ok", text: "Boa jogatina!" });
       setWinner(null);
+      await loadWinner();
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     }

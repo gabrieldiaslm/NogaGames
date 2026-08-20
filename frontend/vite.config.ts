@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { copyFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,7 +17,7 @@ function spaFallback(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), spaFallback()],
+  plugins: [react(), tailwindcss(), spaFallback()],
   server: {
     port: 5173,
   },

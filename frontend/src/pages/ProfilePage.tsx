@@ -1,26 +1,36 @@
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import type { CompletedGameItem } from "../api/types";
+import type { AuthUser, CompletedGameItem, GroupSummary } from "../api/types";
 import { GameCover } from "../components/GameCover";
 import { LogoutIcon, PlayIcon, RefreshIcon } from "../components/Icons";
 import { formatHours } from "../utils/format";
 
-type PlayingGame = CompletedGameItem;
+interface PlayingGame extends CompletedGameItem {
+  groupId: string;
+}
 
 export function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [playing, setPlaying] = useState<PlayingGame[]>([]);
+  const [groups, setGroups] = useState<GroupSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [username, setUsername] = useState(user?.username ?? "");
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl ?? "");
+  const [saving, setSaving] = useState(false);
 
   const loadPlaying = useCallback(async () => {
     try {
       const { data } = await api.get<PlayingGame[]>("/games/playing");
       setPlaying(data);
+      const { data: groupsData } = await api.get<GroupSummary[]>("/groups");
+      setGroups(groupsData);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
@@ -31,6 +41,10 @@ export function ProfilePage() {
   useEffect(() => {
     loadPlaying();
   }, [loadPlaying]);
+
+  function groupName(groupId: string): string | null {
+    return groups.find((group) => group.id === groupId)?.name ?? null;
+  }
 
   async function changeStatus(game: PlayingGame, status: "COMPLETED" | "BACKLOG") {
     setBusyId(game.id);
@@ -49,6 +63,25 @@ export function ProfilePage() {
     }
   }
 
+  async function handleSaveProfile(event: FormEvent) {
+    event.preventDefault();
+    setMessage(null);
+    setSaving(true);
+    try {
+      const { data } = await api.patch<AuthUser>("/profile", {
+        username: username.trim(),
+        avatarUrl: avatarUrl.trim() || null,
+      });
+      updateUser(data);
+      setEditing(false);
+      setMessage({ type: "ok", text: "Perfil atualizado!" });
+    } catch (err) {
+      setMessage({ type: "error", text: getErrorMessage(err) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function handleLogout() {
     logout();
     navigate("/auth/login");
@@ -61,14 +94,51 @@ export function ProfilePage() {
       {message && <div className={`banner ${message.type}`}>{message.text}</div>}
 
       <section className="profile-card" aria-label="Dados do usuário">
-        <div className="profile-avatar" aria-hidden="true">
-          {user?.username?.charAt(0).toUpperCase() ?? "?"}
-        </div>
+        {user?.avatarUrl ? (
+          <img className="avatar profile" src={user.avatarUrl} alt="" />
+        ) : (
+          <div className="profile-avatar" aria-hidden="true">
+            {user?.username?.charAt(0).toUpperCase() ?? "?"}
+          </div>
+        )}
         <div>
           <strong className="profile-username">{user?.username}</strong>
           <span className="muted">{user?.email}</span>
         </div>
+        <button
+          className="btn small"
+          onClick={() => {
+            setEditing((prev) => !prev);
+            setUsername(user?.username ?? "");
+            setAvatarUrl(user?.avatarUrl ?? "");
+          }}
+        >
+          {editing ? "Cancelar" : "Editar"}
+        </button>
       </section>
+
+      {editing && (
+        <form className="stack-form" onSubmit={handleSaveProfile}>
+          <input
+            type="text"
+            placeholder="Nome de usuário"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            aria-label="Nome de usuário"
+            required
+          />
+          <input
+            type="url"
+            placeholder="URL do avatar (opcional)"
+            value={avatarUrl}
+            onChange={(event) => setAvatarUrl(event.target.value)}
+            aria-label="URL do avatar"
+          />
+          <button className="btn primary" type="submit" disabled={saving}>
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+        </form>
+      )}
 
       <section aria-label="Jogando agora">
         <h2 className="section-title">Jogando agora</h2>
@@ -87,6 +157,7 @@ export function ProfilePage() {
                 <div className="game-row-info">
                   <strong>{game.title}</strong>
                   <span className="muted">
+                    {groupName(game.groupId) ? `${groupName(game.groupId)} · ` : ""}
                     Jogando desde {new Date(game.updatedAt).toLocaleDateString("pt-BR")}
                     {formatHours(game.hoursToBeat)
                       ? ` \u00b7 ${formatHours(game.hoursToBeat)}`
