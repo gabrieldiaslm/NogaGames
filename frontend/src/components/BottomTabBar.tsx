@@ -27,7 +27,8 @@ function GroupTabs({ groupId }: { groupId: string }) {
 
 function GlobalTabs() {
   const tabs = [
-    { to: "/groups", label: "Grupos", icon: UsersIcon, end: true },
+    { to: "/", label: "Home", icon: HomeIcon, end: true },
+    { to: "/conexao", label: "Conexão", icon: UsersIcon, end: false },
     { to: "/profile", label: "Perfil", icon: UserIcon, end: false },
   ];
   return (

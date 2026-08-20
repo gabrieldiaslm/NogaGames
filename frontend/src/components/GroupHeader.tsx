@@ -14,8 +14,8 @@ export function GroupHeader({ groupId }: { groupId: string }) {
   if (!group) {
     return (
       <header className="group-header">
-        <Link to="/groups" className="group-back-link">
-          Meus grupos
+        <Link to="/" className="group-back-link">
+          Início
         </Link>
       </header>
     );
@@ -23,7 +23,7 @@ export function GroupHeader({ groupId }: { groupId: string }) {
 
   return (
     <header className="group-header">
-      <Link to="/groups" className="group-back-link" aria-label="Voltar para meus grupos">
+      <Link to="/" className="group-back-link" aria-label="Voltar para o início">
         &larr;
       </Link>
       <div className="group-header-info">

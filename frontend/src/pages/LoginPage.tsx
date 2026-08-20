@@ -26,7 +26,7 @@ export function LoginPage() {
         headers: { Authorization: `Bearer ${data.token}` },
       });
       login(data.token, profile.data);
-      navigate("/groups");
+      navigate("/");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

@@ -29,7 +29,7 @@ export function RegisterPage() {
         password,
       });
       login(data.token, user);
-      navigate("/groups");
+      navigate("/");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

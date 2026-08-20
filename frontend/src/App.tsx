@@ -4,8 +4,9 @@ import { BottomTabBar } from "./components/BottomTabBar";
 import { GroupHeader } from "./components/GroupHeader";
 import { BacklogPage } from "./pages/BacklogPage";
 import { CompletedPage } from "./pages/CompletedPage";
+import { ConexaoPage } from "./pages/ConexaoPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { GroupsPage } from "./pages/GroupsPage";
+import { HomePage } from "./pages/HomePage";
 import { GroupMembersPage } from "./pages/GroupMembersPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -21,8 +22,9 @@ function ProtectedLayout() {
   return (
     <div className="app-shell">
       <Routes>
-        <Route path="/" element={<Navigate to="/groups" replace />} />
-        <Route path="/groups" element={<GroupsPage />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/conexao" element={<ConexaoPage />} />
+        <Route path="/groups" element={<Navigate to="/conexao" replace />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/groups/:groupId" element={<GroupLayout />}>
           <Route index element={<DashboardPage />} />

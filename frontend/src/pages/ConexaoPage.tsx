@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
 import { api, getErrorMessage } from "../api/client";
 import type { GroupSummary } from "../api/types";
-import { PlusIcon, UsersIcon } from "../components/Icons";
+import { CopyIcon, PlusIcon } from "../components/Icons";
 
-export function GroupsPage() {
+export function ConexaoPage() {
   const [groups, setGroups] = useState<GroupSummary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -15,6 +13,7 @@ export function GroupsPage() {
   const [inviteCode, setInviteCode] = useState("");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const loadGroups = useCallback(async () => {
     try {
@@ -22,8 +21,6 @@ export function GroupsPage() {
       setGroups(data);
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -40,7 +37,10 @@ export function GroupsPage() {
       setGroups((prev) => [data, ...prev]);
       setName("");
       setDescription("");
-      setMessage({ type: "ok", text: "Grupo criado! Compartilhe o código de convite com os amigos." });
+      setMessage({
+        type: "ok",
+        text: `Turma "${data.name}" criada! Compartilhe o código de convite com os amigos.`,
+      });
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
@@ -57,7 +57,7 @@ export function GroupsPage() {
       setGroups((prev) => [data, ...prev]);
       setJoinGroupId("");
       setInviteCode("");
-      setMessage({ type: "ok", text: `Você entrou no grupo "${data.name}"!` });
+      setMessage({ type: "ok", text: `Você entrou na turma "${data.name}"!` });
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });
     } finally {
@@ -65,22 +65,32 @@ export function GroupsPage() {
     }
   }
 
+  async function handleCopyInvite(group: GroupSummary) {
+    try {
+      await navigator.clipboard.writeText(`NogaGames - turma "${group.name}"\nID: ${group.id}\nConvite: ${group.inviteCode}`);
+      setCopiedId(group.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setMessage({ type: "error", text: "Não foi possível copiar o convite." });
+    }
+  }
+
   return (
     <main className="page">
-      <h1>Meus grupos</h1>
-      <p className="page-subtitle">Crie um grupo com seus amigos e decidam o próximo jogo juntos.</p>
+      <h1>Conexão</h1>
+      <p className="page-subtitle">Crie uma turma nova ou entre em uma existente.</p>
 
       {message && <div className={`banner ${message.type}`}>{message.text}</div>}
 
-      <section aria-label="Criar grupo">
-        <h2 className="section-title">Criar grupo</h2>
+      <section aria-label="Criar turma">
+        <h2 className="section-title">Criar turma</h2>
         <form className="stack-form" onSubmit={handleCreate}>
           <input
             type="text"
-            placeholder="Nome do grupo (ex: Jogadores Noturnos)"
+            placeholder="Nome da turma (ex: Jogadores Noturnos)"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            aria-label="Nome do grupo"
+            aria-label="Nome da turma"
             required
           />
           <input
@@ -88,23 +98,23 @@ export function GroupsPage() {
             placeholder="Descrição (opcional)"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            aria-label="Descrição do grupo"
+            aria-label="Descrição da turma"
           />
           <button className="btn primary" type="submit" disabled={creating}>
-            <PlusIcon /> {creating ? "Criando..." : "Criar grupo"}
+            <PlusIcon /> {creating ? "Criando..." : "Criar turma"}
           </button>
         </form>
       </section>
 
-      <section aria-label="Entrar em grupo">
-        <h2 className="section-title">Entrar com código</h2>
+      <section aria-label="Entrar com convite">
+        <h2 className="section-title">Entrar com convite</h2>
         <form className="stack-form" onSubmit={handleJoin}>
           <input
             type="text"
-            placeholder="ID do grupo (do convite)"
+            placeholder="ID da turma (do convite)"
             value={joinGroupId}
             onChange={(event) => setJoinGroupId(event.target.value)}
-            aria-label="ID do grupo"
+            aria-label="ID da turma"
             required
           />
           <input
@@ -116,41 +126,41 @@ export function GroupsPage() {
             required
           />
           <button className="btn" type="submit" disabled={joining}>
-            {joining ? "Entrando..." : "Entrar no grupo"}
+            {joining ? "Entrando..." : "Entrar na turma"}
           </button>
         </form>
       </section>
 
-      <section aria-label="Meus grupos">
-        <h2 className="section-title">Minhas turmas</h2>
-        {loading ? (
-          <p className="muted">Carregando...</p>
-        ) : groups.length === 0 ? (
-          <div className="empty-state">
-            <p>Você ainda não participa de nenhum grupo.</p>
-            <p className="muted">Crie um grupo acima ou entre com um código de convite.</p>
-          </div>
-        ) : (
+      {groups.length > 0 && (
+        <section aria-label="Meus convites">
+          <h2 className="section-title">Meus convites</h2>
+          <p className="muted invite-hint">
+            Copie o convite das suas turmas e envie para os amigos.
+          </p>
           <ul className="game-list">
             {groups.map((group) => (
-              <li key={group.id}>
-                <Link className="group-card" to={`/groups/${group.id}`}>
-                  <div className="group-card-info">
-                    <strong>{group.name}</strong>
-                    {group.description && <span className="muted">{group.description}</span>}
-                    <span className="muted">
-                      {group.memberCount} membro{group.memberCount === 1 ? "" : "s"} · {group.gameCount} jogo
-                      {group.gameCount === 1 ? "" : "s"} ·{" "}
-                      {group.myRole === "ADMIN" ? "Admin" : "Membro"}
+              <li key={group.id} className="game-row">
+                <div className="game-row-info">
+                  <strong>{group.name}</strong>
+                  <code className="invite-code compact">{group.inviteCode}</code>
+                </div>
+                <button
+                  className="btn icon"
+                  onClick={() => handleCopyInvite(group)}
+                  aria-label={`Copiar convite de ${group.name}`}
+                >
+                  <CopyIcon />
+                  {copiedId === group.id ? (
+                    <span className="copied-tick" aria-hidden="true">
+                      ok
                     </span>
-                  </div>
-                  <UsersIcon />
-                </Link>
+                  ) : null}
+                </button>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </main>
   );
 }
