@@ -59,9 +59,9 @@ export function DashboardPage() {
     setAddingId(externalId);
     setMessage(null);
     try {
-      await api.post("/games", { externalId, groupId });
+      const { data } = await api.post<{ title: string; created: boolean }>("/games", { externalId, groupId });
       setResults((prev) => prev.filter((game) => game.externalId !== externalId));
-      setMessage({ type: "ok", text: "Jogo adicionado ao backlog!" });
+      setMessage({ type: "ok", text: data.created ? `"${data.title}" adicionado ao backlog!` : "Este jogo já está no backlog do grupo." });
       await loadWinner();
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err) });

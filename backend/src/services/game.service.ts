@@ -35,12 +35,23 @@ export interface GameFilters {
   platform?: string;
 }
 
-function filterWhere(where: { groupId: string; status?: GameStatus }, filters: GameFilters) {
+function filterWhere(where: { groupId: string }, filters: GameFilters) {
   return {
     ...where,
     ...(filters.genre ? { genre: filters.genre } : {}),
     ...(filters.year ? { releaseYear: filters.year } : {}),
     ...(filters.platform ? { platform: filters.platform } : {}),
+  };
+}
+
+function myBacklogFilter(userId: string) {
+  return {
+    userGames: {
+      none: {
+        userId,
+        status: { in: ["PLAYING" as GameStatus, "COMPLETED" as GameStatus, "DROPPED" as GameStatus] },
+      },
+    },
   };
 }
 
@@ -57,32 +68,40 @@ export async function addGameByExternalId(
   externalId: number,
   groupId: string,
   userId: string,
-): Promise<{ id: string; title: string; status: GameStatus }> {
+): Promise<{ id: string; title: string; status: GameStatus; created: boolean }> {
   await requireGroupMember(userId, groupId);
   const details = await getGameDetailsRawg(externalId);
 
-  try {
-    const game = await prisma.game.create({
-      data: {
-        externalId,
-        title: details.title,
-        coverImage: details.coverImage,
-        releaseYear: details.releaseYear,
-        genre: details.genre,
-        platform: details.platform,
-        hoursToBeat: details.hoursToBeat,
-        status: "BACKLOG",
-        groupId,
-        addedById: userId,
-      },
+  const existing = await prisma.game.findUnique({
+    where: { groupId_externalId: { groupId, externalId } },
+  });
+
+  if (existing) {
+    const myProgress = await prisma.userGame.findUnique({
+      where: { userId_gameId: { userId, gameId: existing.id } },
     });
-    return { id: game.id, title: game.title, status: game.status };
-  } catch (err) {
-    if ((err as { code?: string }).code === "P2002") {
-      throw new AppError(409, "Este jogo já está no backlog do grupo.");
+    if (myProgress && (myProgress.status === "COMPLETED" || myProgress.status === "DROPPED")) {
+      await prisma.userGame.delete({ where: { id: myProgress.id } });
     }
-    throw err;
+    return { id: existing.id, title: existing.title, status: "BACKLOG", created: false };
   }
+
+  const game = await prisma.game.create({
+    data: {
+      externalId,
+      title: details.title,
+      coverImage: details.coverImage,
+      releaseYear: details.releaseYear,
+      genre: details.genre,
+      platform: details.platform,
+      hoursToBeat: details.hoursToBeat,
+      status: "BACKLOG",
+      groupId,
+      addedById: userId,
+    },
+  });
+
+  return { id: game.id, title: game.title, status: game.status, created: true };
 }
 
 function parseReviewInput(rating: unknown, comment: unknown): { rating: number; comment: string | null } {
@@ -103,9 +122,13 @@ export async function changeGameStatus(
   userId: string,
   review?: { rating?: unknown; comment?: unknown },
 ): Promise<{ id: string; status: GameStatus }> {
-  const game = await findGameForMember(gameId, userId);
+  await findGameForMember(gameId, userId);
 
-  const current = game.status;
+  const myProgress = await prisma.userGame.findUnique({
+    where: { userId_gameId: { userId, gameId } },
+  });
+
+  const current: GameStatus = myProgress && myProgress.status !== "BACKLOG" ? myProgress.status : "BACKLOG";
   if (!canTransition(current, next)) {
     throw new AppError(400, `Transição inválida: ${current} -> ${next}.`);
   }
@@ -113,31 +136,11 @@ export async function changeGameStatus(
   const parsedReview = next === "COMPLETED" && review?.rating !== undefined ? parseReviewInput(review.rating, review.comment) : null;
 
   return prisma.$transaction(async (tx) => {
-    const myProgress = await tx.userGame.findUnique({
-      where: { userId_gameId: { userId, gameId } },
-    });
-
-    if (current === "PLAYING") {
-      const ownerOfProgress = myProgress?.status === "PLAYING";
-      if (next === "COMPLETED" && !ownerOfProgress) {
-        throw new AppError(403, "Apenas quem está jogando o jogo pode marcá-lo como zerado.");
+    if (next === "BACKLOG") {
+      if (myProgress) {
+        await tx.userGame.delete({ where: { id: myProgress.id } });
       }
-      if (next === "BACKLOG" && !ownerOfProgress) {
-        throw new AppError(403, "Apenas quem está jogando o jogo pode devolvê-lo ao backlog.");
-      }
-    }
-
-    if (current === "COMPLETED" && next === "BACKLOG" && myProgress?.status !== "COMPLETED") {
-      throw new AppError(403, "Apenas quem zerou o jogo pode reintegrá-lo ao backlog.");
-    }
-
-    if (current === "DROPPED" && next === "BACKLOG" && myProgress?.status !== "DROPPED") {
-      throw new AppError(403, "Apenas quem desistiu do jogo pode devolvê-lo ao backlog.");
-    }
-
-    if (next === "BACKLOG" && myProgress) {
-      await tx.userGame.delete({ where: { id: myProgress.id } });
-    } else if (myProgress) {
+    } else if (myProgress && myProgress.status !== "BACKLOG") {
       await tx.userGame.update({
         where: { id: myProgress.id },
         data: { status: next },
@@ -156,12 +159,7 @@ export async function changeGameStatus(
       });
     }
 
-    const updated = await tx.game.update({
-      where: { id: gameId },
-      data: { status: next },
-    });
-
-    return { id: updated.id, status: updated.status };
+    return { id: gameId, status: next };
   });
 }
 
@@ -180,7 +178,10 @@ export async function getDashboardWinner(
   await requireGroupMember(userId, groupId);
 
   const winner = await prisma.game.findFirst({
-    where: { groupId, status: "BACKLOG" },
+    where: {
+      groupId,
+      ...myBacklogFilter(userId),
+    },
     orderBy: [{ votes: { _count: "desc" } }, { createdAt: "desc" }],
     select: {
       id: true,
@@ -219,7 +220,10 @@ export async function getBacklogGames(
   await requireGroupMember(userId, groupId);
 
   const games = await prisma.game.findMany({
-    where: filterWhere({ groupId, status: "BACKLOG" }, filters),
+    where: {
+      ...filterWhere({ groupId }, filters),
+      ...myBacklogFilter(userId),
+    },
     orderBy: [{ votes: { _count: "desc" } }, { createdAt: "asc" }],
     include: {
       _count: { select: { votes: true } },
@@ -435,8 +439,13 @@ export async function getRandomBacklogGame(
   await requireGroupMember(userId, groupId);
 
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id FROM "Game"
-    WHERE "groupId" = ${groupId} AND "status" = 'BACKLOG'::"GameStatus"
+    SELECT g.id FROM "Game" g
+    WHERE g."groupId" = ${groupId}
+      AND NOT EXISTS (
+        SELECT 1 FROM "UserGame" ug
+        WHERE ug."gameId" = g.id AND ug."userId" = ${userId}
+          AND ug."status" IN ('PLAYING', 'COMPLETED', 'DROPPED')
+      )
     ORDER BY RANDOM()
     LIMIT 1
   `;

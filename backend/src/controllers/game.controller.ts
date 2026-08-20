@@ -37,7 +37,7 @@ export async function addGame(req: Request, res: Response, next: NextFunction): 
       throw new AppError(400, "'groupId' é obrigatório.");
     }
     const game = await addGameByExternalId(externalId, groupId, req.userId ?? "");
-    res.status(201).json(game);
+    res.status(game.created ? 201 : 200).json(game);
   } catch (err) {
     next(err);
   }
