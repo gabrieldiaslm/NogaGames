@@ -9,6 +9,7 @@ import {
   getGroupCompleted,
   getGroupDashboard,
   getRandom,
+  joinByCode,
   joinGroup,
   listGroups,
   listMembers,
@@ -21,6 +22,7 @@ groupRoutes.use(authMiddleware);
 
 groupRoutes.get("/", listGroups);
 groupRoutes.post("/", createGroupHandler);
+groupRoutes.post("/join", joinByCode);
 groupRoutes.post("/:id/join", joinGroup);
 groupRoutes.get("/:id", getGroup);
 groupRoutes.get("/:id/members", listMembers);

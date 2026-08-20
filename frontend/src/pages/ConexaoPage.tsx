@@ -9,7 +9,6 @@ export function ConexaoPage() {
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [joinGroupId, setJoinGroupId] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
@@ -53,9 +52,8 @@ export function ConexaoPage() {
     setMessage(null);
     setJoining(true);
     try {
-      const { data } = await api.post<GroupSummary>(`/groups/${joinGroupId}/join`, { inviteCode });
+      const { data } = await api.post<GroupSummary>("/groups/join", { inviteCode });
       setGroups((prev) => [data, ...prev]);
-      setJoinGroupId("");
       setInviteCode("");
       setMessage({ type: "ok", text: `Você entrou na turma "${data.name}"!` });
     } catch (err) {
@@ -67,7 +65,7 @@ export function ConexaoPage() {
 
   async function handleCopyInvite(group: GroupSummary) {
     try {
-      await navigator.clipboard.writeText(`NogaGames - turma "${group.name}"\nID: ${group.id}\nConvite: ${group.inviteCode}`);
+      await navigator.clipboard.writeText(`NogaGames - turma "${group.name}"\nConvite: ${group.inviteCode}`);
       setCopiedId(group.id);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
@@ -109,14 +107,6 @@ export function ConexaoPage() {
       <section aria-label="Entrar com convite">
         <h2 className="section-title">Entrar com convite</h2>
         <form className="stack-form" onSubmit={handleJoin}>
-          <input
-            type="text"
-            placeholder="ID da turma (do convite)"
-            value={joinGroupId}
-            onChange={(event) => setJoinGroupId(event.target.value)}
-            aria-label="ID da turma"
-            required
-          />
           <input
             type="text"
             placeholder="Código de convite"

@@ -6,6 +6,7 @@ import {
   getGroupMembers,
   getMyGroups,
   joinGroupByCode,
+  joinGroupByInviteCode,
   removeGroupMember,
 } from "../services/group.service.js";
 import { getBacklogGames, getCompletedGames, getDashboardWinner, getGroupFilters, getRandomBacklogGame } from "../services/game.service.js";
@@ -32,6 +33,16 @@ export async function joinGroup(req: Request, res: Response, next: NextFunction)
     const { id } = req.params;
     const { inviteCode } = req.body ?? {};
     const group = await joinGroupByCode(req.userId ?? "", id, inviteCode);
+    res.json(group);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function joinByCode(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { inviteCode } = req.body ?? {};
+    const group = await joinGroupByInviteCode(req.userId ?? "", inviteCode);
     res.json(group);
   } catch (err) {
     next(err);

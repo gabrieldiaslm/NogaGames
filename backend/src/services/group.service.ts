@@ -100,6 +100,40 @@ export async function getMyGroups(userId: string): Promise<GroupSummary[]> {
   }));
 }
 
+export async function joinGroupByInviteCode(userId: string, inviteCode?: string): Promise<GroupSummary> {
+  const group = await prisma.group.findUnique({
+    where: { inviteCode: String(inviteCode ?? "").trim().toUpperCase() },
+    include: { _count: { select: { members: true, games: true } } },
+  });
+
+  if (!group) {
+    throw new AppError(404, "Código de convite inválido. Verifique e tente novamente.");
+  }
+
+  const existing = await prisma.groupMember.findUnique({
+    where: { userId_groupId: { userId, groupId: group.id } },
+  });
+  if (existing) {
+    throw new AppError(409, "Você já participa desta turma.");
+  }
+
+  await prisma.groupMember.create({
+    data: { userId, groupId: group.id, role: "MEMBER" },
+  });
+
+  return {
+    id: group.id,
+    name: group.name,
+    description: group.description,
+    inviteCode: group.inviteCode,
+    ownerId: group.ownerId,
+    memberCount: group._count.members + 1,
+    gameCount: group._count.games,
+    myRole: "MEMBER",
+    createdAt: group.createdAt.toISOString(),
+  };
+}
+
 export async function joinGroupByCode(userId: string, groupId: string, inviteCode?: string): Promise<GroupSummary> {
   const group = await prisma.group.findUnique({
     where: { id: groupId },
